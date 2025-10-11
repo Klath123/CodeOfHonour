@@ -8,6 +8,7 @@ import EnterInviteCode from './components/EnterInviteCode';
 import Navbar from './components/navbar';
 import { ToastContainer } from 'react-toastify';
 import { useAuthStore } from './context/useAuthStore';
+import PlayGround from './components/PlayGround';
 import axios from 'axios';
 import './App.css'
 
@@ -25,6 +26,7 @@ function App() {
       <Navbar />
       <Routes>
         <Route path="/" element={<Home />} />
+        <Route path="/playground" element={<PlayGround />} />
         <Route path="/register" element={<Register />} />
         <Route path="/login" element={<Login />} />
         <Route path="/chat" element={<Chat />} />

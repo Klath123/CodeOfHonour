@@ -3,8 +3,8 @@ import { useAuthStore } from "../context/useAuthStore";
 import {
   encryptAndSignMessage,
   decryptAndVerifyMessage,
-  encryptMessage, // Keep as fallback
-  decryptMessage, // Keep as fallback
+  encryptMessage,
+  decryptMessage,
 } from "../utils/crypto";
 import { chatStorage } from "../utils/chatStorage";
 
@@ -12,7 +12,6 @@ export default function WebSocketChatBox({ peer }) {
   const { user } = useAuthStore();
   const peerId = peer?.user_id || peer?._id;
   
-  // Create a consistent chatId that works regardless of who initiated the chat
   const chatId = [user._id, peerId].sort().join('_');
   
   console.log("🔍 Chat ID:", chatId);
@@ -21,11 +20,11 @@ export default function WebSocketChatBox({ peer }) {
 
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
-  const [status, setStatus] = useState("🔌 Connecting...");
+  const [status, setStatus] = useState("🔄 Initializing secure channel...");
   const [isConnecting, setIsConnecting] = useState(false);
   const [dbInitialized, setDbInitialized] = useState(false);
-  const [isUserOnline, setIsUserOnline] = useState(true); // New state for online status
-  
+  const [isUserOnline, setIsUserOnline] = useState(true);
+
   const socket = useRef(null);
   const scrollRef = useRef();
   const reconnectTimeoutRef = useRef(null);
@@ -46,7 +45,6 @@ export default function WebSocketChatBox({ peer }) {
     initDB();
   }, []);
 
-  // Load both Kyber and Dilithium keys
   const [kyberPrivateKey, setKyberPrivateKey] = useState(null);
   const [dilithiumPrivateKey, setDilithiumPrivateKey] = useState(null);
   
@@ -55,7 +53,6 @@ export default function WebSocketChatBox({ peer }) {
       if (!dbInitialized || !user) return;
       
       try {
-        // Try to get from IndexedDB first
         const keys = await chatStorage.getKeys(user._id);
         if (keys?.privateKey && keys?.dilithiumPrivateKey) {
           setKyberPrivateKey(keys.privateKey);
@@ -63,7 +60,6 @@ export default function WebSocketChatBox({ peer }) {
           return;
         }
         
-        // Fallback to localStorage
         const kyberPrivateKeyBase64 = localStorage.getItem("kyberPrivate");
         const dilithiumPrivateKeyBase64 = localStorage.getItem("dilithiumPrivate");
         
@@ -71,7 +67,6 @@ export default function WebSocketChatBox({ peer }) {
           setKyberPrivateKey(kyberPrivateKeyBase64);
           setDilithiumPrivateKey(dilithiumPrivateKeyBase64);
           
-          // Migrate to IndexedDB
           const kyberPublicKey = localStorage.getItem("kyberPublic");
           const dilithiumPublicKey = localStorage.getItem("dilithiumPublic");
           
@@ -92,7 +87,6 @@ export default function WebSocketChatBox({ peer }) {
     loadKeys();
   }, [dbInitialized, user]);
 
-  // Check user online status
   const checkUserOnlineStatus = useCallback(async () => {
     try {
       const res = await fetch(`http://localhost:8000/api/v1/user/status/${peerId}`, {
@@ -110,16 +104,14 @@ export default function WebSocketChatBox({ peer }) {
     }
   }, [peerId]);
 
-  // Check online status periodically
   useEffect(() => {
     if (peerId) {
       checkUserOnlineStatus();
-      const interval = setInterval(checkUserOnlineStatus, 30000); // Check every 30 seconds
+      const interval = setInterval(checkUserOnlineStatus, 30000);
       return () => clearInterval(interval);
     }
   }, [peerId, checkUserOnlineStatus]);
 
-  // Updated function to fetch both Kyber and Dilithium public keys
   const fetchPeerPublicKeys = useCallback(async (peerId) => {
     try {
       const res = await fetch(`http://localhost:8000/api/v1/user/keys/${peerId}`, {
@@ -138,7 +130,6 @@ export default function WebSocketChatBox({ peer }) {
         throw new Error("No dilithiumPublicKey found in response");
       }
       
-      // Validate Base64 strings
       try {
         atob(data.kyber_public_key);
         atob(data.dilithium_public_key);
@@ -156,8 +147,6 @@ export default function WebSocketChatBox({ peer }) {
     }
   }, []);
 
-  // Load messages from IndexedDB first, then fetch from server
-  // Updated to handle signature verification
   useEffect(() => {
     if (!user || !peerId || !kyberPrivateKey || !dilithiumPrivateKey || !dbInitialized) return;
 
@@ -165,11 +154,9 @@ export default function WebSocketChatBox({ peer }) {
       try {
         console.log("📱 Loading messages for chat:", chatId);
         
-        // Load from IndexedDB first
         const localMessages = await chatStorage.getMessages(chatId);
         console.log("📱 Local messages found:", localMessages.length);
         
-        // Get peer's Dilithium public key for signature verification
         let peerDilithiumPublicKey = null;
         try {
           const peerKeys = await fetchPeerPublicKeys(peerId);
@@ -178,11 +165,9 @@ export default function WebSocketChatBox({ peer }) {
           console.warn("⚠️ Could not fetch peer's Dilithium key, signatures will not be verified:", error);
         }
         
-        // Process local messages and filter for this specific chat
         const processedLocal = await Promise.all(
           localMessages
             .filter(msg => {
-              // Ensure message belongs to this specific chat
               const isMyMessage = msg.senderId === user._id && msg.receiverId === peerId;
               const isTheirMessage = msg.senderId === peerId && msg.receiverId === user._id;
               return isMyMessage || isTheirMessage;
@@ -197,12 +182,10 @@ export default function WebSocketChatBox({ peer }) {
                   signatureVerified: msg.signatureVerified || null
                 };
               } else {
-                // Decrypt stored encrypted message with signature verification
                 try {
                   let decryptedText;
                   let signatureVerified = null;
                   
-                  // Check if message has signature for verification
                   if (msg.signature && peerDilithiumPublicKey) {
                     const result = await decryptAndVerifyMessage({
                       kyberPrivateKeyBase64: kyberPrivateKey,
@@ -215,7 +198,6 @@ export default function WebSocketChatBox({ peer }) {
                     decryptedText = result.message;
                     signatureVerified = result.signatureValid;
                   } else {
-                    // Fallback to regular decryption for messages without signatures
                     decryptedText = await decryptMessage({
                       kyberPrivateKeyBase64: kyberPrivateKey,
                       kyberCiphertextBase64: msg.ciphertext,
@@ -245,12 +227,10 @@ export default function WebSocketChatBox({ peer }) {
             })
         );
 
-        // Sort by timestamp to ensure chronological order
         processedLocal.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
         setMessages(processedLocal);
         console.log("📱 Processed local messages:", processedLocal.length);
 
-        // Fetch from server to sync any new messages
         const res = await fetch(
           `http://localhost:8000/api/v1/messages/${peerId}`,
           {
@@ -260,13 +240,12 @@ export default function WebSocketChatBox({ peer }) {
 
         if (!res.ok) {
           console.warn(`⚠️ Server fetch failed: ${res.status}`);
-          return; // Use local messages if server fails
+          return;
         }
 
         const serverData = await res.json();
         console.log("📜 Server messages found:", serverData.length);
 
-        // Process server messages and store new ones locally
         const serverMessages = [];
         
         for (const msg of serverData) {
@@ -274,7 +253,6 @@ export default function WebSocketChatBox({ peer }) {
             const isMyMessage = msg.sender_id === user._id;
             const messageTimestamp = msg.timestamp;
             
-            // Check if we already have this message locally
             const alreadyExists = await chatStorage.messageExists(
               chatId, 
               messageTimestamp, 
@@ -292,11 +270,9 @@ export default function WebSocketChatBox({ peer }) {
 
             if (msg.message_type === "encrypted" && msg.ciphertext && msg.encrypted_message && msg.iv) {
               if (isMyMessage) {
-                // For your own messages from server, show as sent (you can't decrypt them)
                 console.log("📤 Found your encrypted message on server");
                 continue;
               } else {
-                // Decrypt received messages with signature verification if available
                 if (msg.signature && peerDilithiumPublicKey) {
                   try {
                     const result = await decryptAndVerifyMessage({
@@ -320,7 +296,6 @@ export default function WebSocketChatBox({ peer }) {
                     signatureVerified = false;
                   }
                 } else {
-                  // Regular decryption for messages without signatures
                   messageText = await decryptMessage({
                     kyberPrivateKeyBase64: kyberPrivateKey,
                     kyberCiphertextBase64: msg.ciphertext,
@@ -329,7 +304,6 @@ export default function WebSocketChatBox({ peer }) {
                   });
                 }
                 
-                // Store decrypted message locally
                 await chatStorage.storeReceivedMessage(
                   chatId,
                   {
@@ -371,11 +345,9 @@ export default function WebSocketChatBox({ peer }) {
           }
         }
 
-        // Merge local and server messages, remove duplicates, and sort by time
         const allMessages = [...processedLocal];
         
         for (const serverMsg of serverMessages) {
-          // Check if this server message is already in local messages
           const isDuplicate = allMessages.some(localMsg => 
             Math.abs(new Date(localMsg.timestamp) - new Date(serverMsg.timestamp)) < 1000 &&
             localMsg.text === serverMsg.text &&
@@ -387,7 +359,6 @@ export default function WebSocketChatBox({ peer }) {
           }
         }
 
-        // Final sort by timestamp
         allMessages.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
         
         console.log("📜 Final merged messages:", allMessages.length);
@@ -402,7 +373,6 @@ export default function WebSocketChatBox({ peer }) {
     loadMessages();
   }, [peerId, user, kyberPrivateKey, dilithiumPrivateKey, dbInitialized, chatId, fetchPeerPublicKeys]);
 
-  // WebSocket connection updated to handle signatures
   useEffect(() => {
     if (!user || !peer || !kyberPrivateKey || !dilithiumPrivateKey || !dbInitialized) {
       return;
@@ -421,7 +391,7 @@ export default function WebSocketChatBox({ peer }) {
 
       ws.onopen = () => {
         if (!isMounted) return;
-        setStatus("✅ Connected to server");
+        setStatus("✅ Secure channel established");
         setIsConnecting(false);
         reconnectAttempts.current = 0;
         
@@ -454,7 +424,6 @@ export default function WebSocketChatBox({ peer }) {
             let decryptedText;
             let signatureVerified = null;
             
-            // Try to get peer's Dilithium public key for signature verification
             let peerDilithiumPublicKey = null;
             try {
               const peerKeys = await fetchPeerPublicKeys(data.from);
@@ -463,7 +432,6 @@ export default function WebSocketChatBox({ peer }) {
               console.warn("⚠️ Could not fetch peer's Dilithium key:", error);
             }
             
-            // Decrypt and verify signature if available
             if (data.signature && peerDilithiumPublicKey) {
               try {
                 const result = await decryptAndVerifyMessage({
@@ -487,7 +455,6 @@ export default function WebSocketChatBox({ peer }) {
                 signatureVerified = false;
               }
             } else {
-              // Regular decryption for messages without signatures
               decryptedText = await decryptMessage({
                 kyberPrivateKeyBase64: kyberPrivateKey,
                 kyberCiphertextBase64: data.ciphertext,
@@ -503,7 +470,6 @@ export default function WebSocketChatBox({ peer }) {
               signatureVerified: signatureVerified,
             };
 
-            // Store in IndexedDB
             await chatStorage.storeReceivedMessage(
               chatId,
               {
@@ -515,8 +481,8 @@ export default function WebSocketChatBox({ peer }) {
                 signatureVerified: signatureVerified,
               },
               newMessage.timestamp,
-              data.from, // sender ID
-              user._id   // receiver ID (you)
+              data.from,
+              user._id
             );
 
             setMessages((prev) => [...prev, newMessage]);
@@ -533,7 +499,7 @@ export default function WebSocketChatBox({ peer }) {
         if (event.code !== 1000 && event.code !== 1001 && event.code !== 1008) {
           if (reconnectAttempts.current < maxReconnectAttempts) {
             const delay = Math.min(1000 * Math.pow(2, reconnectAttempts.current), 10000);
-            setStatus(`🔄 Reconnecting in ${delay/1000}s...`);
+            setStatus(`🔄 Re-establishing secure channel in ${delay/1000}s...`);
             
             reconnectTimeoutRef.current = setTimeout(() => {
               if (isMounted && !isConnecting) {
@@ -542,16 +508,16 @@ export default function WebSocketChatBox({ peer }) {
               }
             }, delay);
           } else {
-            setStatus("❌ Connection failed - Max retries reached");
+            setStatus("❌ Connection failed - Security protocol terminated");
           }
         } else {
-          setStatus("❌ Disconnected");
+          setStatus("❌ Secure channel disconnected");
         }
       };
 
       ws.onerror = (error) => {
         if (!isMounted) return;
-        setStatus("❌ Connection error");
+        setStatus("❌ Security protocol violation");
         setIsConnecting(false);
       };
     };
@@ -578,21 +544,17 @@ export default function WebSocketChatBox({ peer }) {
     scrollRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // Updated sendMessage to use encryption with signing
   const sendMessage = async () => {
     if (!input.trim()) return;
 
-   
-
     if (!socket.current || socket.current.readyState !== WebSocket.OPEN) {
-      setStatus("❌ WebSocket not connected");
+      setStatus("❌ Secure channel not available");
       return;
     }
 
     try {
       const peerKeys = await fetchPeerPublicKeys(peerId);
       
-      // Use the new encryptAndSignMessage function
       const encryptedPayload = await encryptAndSignMessage(
         peerKeys.kyberPublicKey, 
         input, 
@@ -604,7 +566,7 @@ export default function WebSocketChatBox({ peer }) {
         ciphertext: encryptedPayload.kyberCiphertext,
         encryptedMessage: encryptedPayload.encryptedMessage,
         iv: encryptedPayload.iv,
-        signature: encryptedPayload.signature, // Include signature
+        signature: encryptedPayload.signature,
         to: peerId,
         from: user._id,
       };
@@ -615,83 +577,98 @@ export default function WebSocketChatBox({ peer }) {
         sender: "me",
         text: input,
         timestamp: new Date().toISOString(),
-        signatureVerified: true // Your own messages are always "verified"
+        signatureVerified: true
       };
 
-      // Store your own message in plaintext locally
       await chatStorage.storeMyMessage(
         chatId, 
         input, 
         newMessage.timestamp,
-        user._id,  // sender ID (you)
-        peerId     // receiver ID
+        user._id,
+        peerId
       );
       
       setMessages((prev) => [...prev, newMessage]);
       setInput("");
     } catch (error) {
       console.error("❌ Encryption or send failed:", error);
-      setStatus("❌ Failed to send message");
+      setStatus("❌ Security protocol failure");
     }
   };
 
   if (!user || !peer || !kyberPrivateKey || !dilithiumPrivateKey || !dbInitialized) {
     return (
-      <div className="flex items-center justify-center h-[500px] w-full max-w-md mx-auto bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 rounded-2xl shadow-2xl border border-purple-500/20">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-400 mx-auto mb-4"></div>
-          <p className="text-purple-200 font-medium">Initializing secure chat...</p>
+      <div className="flex items-center justify-center h-[500px] w-full max-w-md mx-auto bg-black rounded-2xl shadow-[0_0_25px_#00ff9940] border border-[#00ff99]/20 relative overflow-hidden">
+        {/* Cyber grid background */}
+        <div className="absolute inset-0 opacity-5">
+          <div className="w-full h-full bg-[linear-gradient(90deg,rgba(0,255,100,0.2)_1px,transparent_1px),linear-gradient(rgba(0,255,100,0.2)_1px,transparent_1px)] bg-[size:20px_20px]"></div>
+        </div>
+        <div className="text-center relative z-10">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#00ff99] mx-auto mb-4"></div>
+          <p className="text-[#00ff99] font-mono font-medium">INITIALIZING SECURE CHANNEL...</p>
         </div>
       </div>
     );
   }
 
   return (
-   <div className="flex flex-col h-[500px] w-full bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 rounded-2xl shadow-2xl border border-purple-500/20 backdrop-blur-sm overflow-hidden">
+    <div className="flex flex-col h-[500px] w-full bg-black rounded-2xl shadow-[0_0_25px_#00ff9940] border border-[#00ff99]/20 backdrop-blur-sm overflow-hidden relative">
 
-      {/* Professional Header with Gradient */}
-      <header className="px-4 py-3 bg-gradient-to-r from-purple-800/80 via-blue-800/80 to-purple-800/80 backdrop-blur-md border-b border-purple-500/30">
+      {/* Cyber grid background */}
+      <div className="absolute inset-0 opacity-5 pointer-events-none">
+        <div className="w-full h-full bg-[linear-gradient(90deg,rgba(0,255,100,0.2)_1px,transparent_1px),linear-gradient(rgba(0,255,100,0.2)_1px,transparent_1px)] bg-[size:20px_20px]"></div>
+      </div>
+
+      {/* Scanning line */}
+      <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0 pointer-events-none">
+        <div className="w-full h-0.5 bg-[#00ff99]/20 animate-[scan_3s_linear_infinite]"></div>
+      </div>
+
+      {/* Header */}
+      <header className="px-4 py-3 bg-[#001a0d]/80 backdrop-blur-md border-b border-[#00ff99]/30 relative z-10">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <div className="relative">
-              <div className="w-10 h-10 bg-gradient-to-br from-purple-400 to-blue-500 rounded-full flex items-center justify-center font-bold text-white text-lg shadow-lg">
+              <div className="w-10 h-10 bg-gradient-to-br from-[#00ff99] to-[#00cc77] rounded-full flex items-center justify-center font-bold text-black text-lg shadow-[0_0_15px_#00ff99] font-mono">
                 {peer.username?.charAt(0).toUpperCase()}
               </div>
-              <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white ${
-                 'bg-green-400'
-              } shadow-sm`}></div>
+              <div className={`absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-black ${
+                isUserOnline ? 'bg-[#00ff99] shadow-[0_0_10px_#00ff99]' : 'bg-[#ff4444]'
+              }`}></div>
             </div>
             <div>
-              <h2 className="font-bold text-white text-base tracking-wide">
+              <h2 className="font-bold text-[#00ff99] text-base tracking-wider font-mono">
                 {peer.username}
               </h2>
               <div className="flex items-center space-x-2">
                 <div className={`w-2 h-2 rounded-full ${
-                   'bg-green-400 animate-pulse'
+                  isUserOnline ? 'bg-[#00ff99] animate-pulse shadow-[0_0_5px_#00ff99]' : 'bg-[#ff4444]'
                 }`}></div>
-               
+                <span className="text-[#00ff99]/80 text-xs font-mono">
+                  {isUserOnline ? 'ACTIVE' : 'OFFLINE'}
+                </span>
               </div>
             </div>
           </div>
           <div className="text-right">
-            <div className="text-xs text-purple-200/80 font-medium">{status}</div>
-            <div className="text-[10px] text-purple-300/60 mt-0.5">End-to-End Encrypted</div>
+            <div className="text-xs text-[#00ff99]/80 font-mono">{status}</div>
+            <div className="text-[10px] text-[#00ff99]/60 mt-0.5 font-mono">QUANTUM-SAFE ENCRYPTED</div>
           </div>
         </div>
       </header>
 
-      {/* Enhanced Chat Messages Area */}
-      <main className="flex-grow p-4 overflow-y-auto bg-gradient-to-b from-slate-900/50 to-purple-900/30 backdrop-blur-sm">
+      {/* Messages Area */}
+      <main className="flex-grow p-4 overflow-y-auto bg-gradient-to-b from-black/50 to-[#001a0d]/30 backdrop-blur-sm relative z-10">
         <div className="flex flex-col space-y-3">
           {messages.length === 0 && (
             <div className="text-center mt-16">
-              <div className="w-16 h-16 bg-gradient-to-br from-purple-500/20 to-blue-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 text-purple-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="w-16 h-16 bg-gradient-to-br from-[#00ff99]/20 to-[#00cc77]/20 rounded-full flex items-center justify-center mx-auto mb-4 border border-[#00ff99]/30">
+                <svg className="w-8 h-8 text-[#00ff99]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                 </svg>
               </div>
-              <p className="text-purple-200/80 font-medium text-sm">Start your secure conversation</p>
-              <p className="text-purple-300/60 text-xs mt-1">All messages are encrypted end-to-end</p>
+              <p className="text-[#00ff99]/80 font-mono text-sm">INITIATE SECURE COMMUNICATION</p>
+              <p className="text-[#00ff99]/60 text-xs mt-1 font-mono">ALL TRAFFIC IS QUANTUM-RESISTANT</p>
             </div>
           )}
           
@@ -701,10 +678,10 @@ export default function WebSocketChatBox({ peer }) {
               className={`flex ${msg.sender === "me" ? "justify-end" : "justify-start"}`}
             >
               <div
-                className={`max-w-[85%] px-4 py-3 rounded-2xl shadow-lg backdrop-blur-sm border ${
+                className={`max-w-[85%] px-4 py-3 rounded-2xl shadow-lg backdrop-blur-sm border font-mono ${
                   msg.sender === "me"
-                    ? "bg-gradient-to-br from-blue-600 to-purple-600 text-white border-blue-500/30 rounded-br-md"
-                    : "bg-gradient-to-br from-gray-800/80 to-gray-700/80 text-gray-100 border-gray-600/30 rounded-bl-md"
+                    ? "bg-gradient-to-br from-[#00ff99] to-[#00cc77] text-black border-[#00ff99]/50 rounded-br-md shadow-[0_0_15px_#00ff9940]"
+                    : "bg-gradient-to-br from-[#003315]/80 to-[#00220d]/80 text-[#00ff99] border-[#00ff99]/30 rounded-bl-md"
                 }`}
                 style={{
                   wordWrap: "break-word",
@@ -712,26 +689,26 @@ export default function WebSocketChatBox({ peer }) {
                 }}
               >
                 <div className="flex flex-col">
-                  <span className="leading-relaxed font-medium text-sm">{msg.text}</span>
+                  <span className="leading-relaxed text-sm">{msg.text}</span>
                   <div className="flex items-center justify-between mt-2">
-                    <span className="text-[10px] opacity-60">
+                    <span className="text-[10px] opacity-60 font-mono">
                       {new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                     </span>
                     {msg.sender === "them" && msg.signatureVerified !== null && (
                       <div className="text-xs flex items-center space-x-1">
                         {msg.signatureVerified ? (
                           <>
-                            <svg className="w-3 h-3 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                            <svg className="w-3 h-3 text-[#00ff99]" fill="currentColor" viewBox="0 0 20 20">
                               <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                             </svg>
-                            <span className="text-green-400 text-[10px]">Verified</span>
+                            <span className="text-[#00ff99] text-[10px] font-mono">VERIFIED</span>
                           </>
                         ) : (
                           <>
-                            <svg className="w-3 h-3 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+                            <svg className="w-3 h-3 text-[#ff4444]" fill="currentColor" viewBox="0 0 20 20">
                               <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                             </svg>
-                            <span className="text-red-400 text-[10px]">Unverified</span>
+                            <span className="text-[#ff4444] text-[10px] font-mono">UNVERIFIED</span>
                           </>
                         )}
                       </div>
@@ -745,63 +722,68 @@ export default function WebSocketChatBox({ peer }) {
         </div>
       </main>
 
-      {/* Enhanced Input Footer */}
-      <footer className="p-4 bg-gradient-to-r from-slate-800/80 via-purple-800/80 to-slate-800/80 backdrop-blur-md border-t border-purple-500/30">
-        {/* {!isUserOnline && (
-          <div className="mb-3 p-2 bg-red-500/20 border border-red-500/30 rounded-lg">
-            <div className="flex items-center space-x-2">
-              <svg className="w-4 h-4 text-red-400" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-              </svg>
-              <span className="text-red-300 text-xs font-medium">User is currently offline</span>
-            </div>
-          </div>
-        )} */}
-        
+      {/* Input Footer */}
+      <footer className="p-4 bg-[#001a0d]/80 backdrop-blur-md border-t border-[#00ff99]/30 relative z-10">
         <div className="flex items-center space-x-3">
           <div className="flex-grow relative">
             <input
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder={"Type your message..."}
+              placeholder={"ENTER ENCRYPTED MESSAGE..."}
               onKeyDown={(e) => {
-                if (e.key === "Enter" && input.trim() ) sendMessage();
+                if (e.key === "Enter" && input.trim()) sendMessage();
               }}
-              className="w-full px-4 py-3 text-sm rounded-2xl bg-gradient-to-r from-gray-800/80 to-gray-700/80 backdrop-blur-sm border border-gray-600/50 text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all duration-200 font-medium"
+              className="w-full px-4 py-3 text-sm rounded-2xl bg-[#00220d]/80 backdrop-blur-sm border border-[#00ff99]/30 text-[#00ff99] placeholder-[#00ff99]/60 focus:outline-none focus:ring-2 focus:ring-[#00ff99]/50 focus:border-[#00ff99]/50 transition-all duration-200 font-mono"
               spellCheck={false}
-              disabled={ isConnecting || socket.current?.readyState !== WebSocket.OPEN}
+              disabled={isConnecting || socket.current?.readyState !== WebSocket.OPEN}
             />
-            {input.trim()  && (
+            {input.trim() && (
               <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                <div className="w-2 h-2 bg-[#00ff99] rounded-full animate-pulse shadow-[0_0_5px_#00ff99]"></div>
               </div>
             )}
           </div>
           
           <button
             onClick={sendMessage}
-            disabled={!input.trim()  || isConnecting || socket.current?.readyState !== WebSocket.OPEN}
-            className="px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 disabled:from-gray-600 disabled:to-gray-700 disabled:cursor-not-allowed text-white font-semibold rounded-2xl transition-all duration-200 shadow-lg disabled:shadow-none transform hover:scale-105 disabled:transform-none flex items-center space-x-2"
+            disabled={!input.trim() || isConnecting || socket.current?.readyState !== WebSocket.OPEN}
+            className="px-6 py-3 bg-gradient-to-r from-[#00ff99] to-[#00cc77] hover:from-[#00e688] hover:to-[#00bb66] disabled:from-gray-600 disabled:to-gray-700 disabled:cursor-not-allowed text-black font-semibold rounded-2xl transition-all duration-200 shadow-[0_0_15px_#00ff99] disabled:shadow-none transform hover:scale-105 disabled:transform-none flex items-center space-x-2 font-mono"
           >
             {isConnecting ? (
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-black"></div>
             ) : (
               <>
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
                 </svg>
-                <span className="text-sm">Send</span>
+                <span className="text-sm">SEND</span>
               </>
             )}
           </button>
         </div>
         
-        <div className="flex items-center justify-between mt-2 text-[10px] text-purple-300/60">
-          <span>🔒 Quantum-safe encryption active</span>
-          <span>{messages.length} messages</span>
+        <div className="flex items-center justify-between mt-2 text-[10px] text-[#00ff99]/60 font-mono">
+          <span>🔒 LATTICE-BASED ENCRYPTION ACTIVE</span>
+          <span>{messages.length} MESSAGES SECURED</span>
         </div>
       </footer>
+
+      {/* Custom animations */}
+      <style jsx>{`
+        @keyframes scan {
+          0% { transform: translateY(-100%); }
+          100% { transform: translateY(400px); }
+        }
+        @keyframes flicker {
+          0%, 18%, 22%, 25%, 53%, 57%, 100% {
+            opacity: 1;
+          }
+          20%, 24%, 55% {
+            opacity: 0.4;
+          }
+        }
+      `}</style>
     </div>
   );
 }

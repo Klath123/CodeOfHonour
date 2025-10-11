@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 # Do NOT include the wildcard "*" when allow_credentials is True.
 origins = [
     "https://quantumchattingapp-frontend.onrender.com",
-    "http://localhost:5173",  # Best practice to remove trailing slashes
+    "https://localhost:5173",  # Best practice to remove trailing slashes
     "http://localhost:5174"
 ]
 

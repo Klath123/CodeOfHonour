@@ -4,15 +4,14 @@ from datetime import datetime
 
 class UserRegister(BaseModel):
     username: str
-    email: str  # or EmailStr for automatic email validation
-    password: str
+    email: str
     kyberPublicKey: str
     dilithiumPublicKey: str
+
 
 class UserModel(BaseModel):
     id: Optional[str]
     username: str
-    password_hash: str
     invite_code: str
     kyber_public_key: str
     dilithium_public_key: str
@@ -23,10 +22,18 @@ class UserLogin(BaseModel):
     username: str = Field(...)
     password: str = Field(...)
     
-# Pydantic models for OTP
-class OTPRequest(BaseModel):
+class RegistrationBeginBody(BaseModel):
+    username: str
+    email: str
+
+class RegistrationCompleteBody(BaseModel):
+    username: str
+    registration_response: dict
+
+class LoginBeginBody(BaseModel):
     username: str
 
-class OTPVerification(BaseModel):
+class LoginCompleteBody(BaseModel):
     username: str
-    otp: str
+    authentication_response: dict
+

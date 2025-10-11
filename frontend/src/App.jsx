@@ -12,7 +12,7 @@ import PlayGround from './components/PlayGround';
 import axios from 'axios';
 import './App.css'
 
-axios.defaults.baseURL = import.meta.BACKEND_URL || "http://localhost:8000/";
+axios.defaults.baseURL = import.meta.BACKEND_URL || "https://localhost:8000/";
 axios.defaults.withCredentials = true;
 function App() {
   const fetchUser = useAuthStore((state) => state.fetchUser);

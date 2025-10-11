@@ -9,7 +9,19 @@ userRouter = APIRouter()
 
 @userRouter.get("/me")
 def me(user=Depends(get_current_user)):
+    print("DEBUG user:", user)
     user["_id"] = str(user["_id"])
+
+    # Safely encode any bytes fields to base64 strings
+    for key, value in list(user.items()):
+        if isinstance(value, bytes):
+            user[key] = base64.b64encode(value).decode("ascii")
+
+    # Optionally remove internal or sensitive fields
+    user.pop("challenge", None)
+    user.pop("challenge_ts", None)
+    user.pop("kyber_private_key", None)  # just in case
+
     return user
 
 @userRouter.post("/connect")

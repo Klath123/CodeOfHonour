@@ -12,7 +12,7 @@ db = client["auth"]
 
 users = db.get_collection("users", codec_options=codec_options)
 messages = db.get_collection("messages", codec_options=codec_options)
-
+credentials = db.get_collection("credentials", codec_options=codec_options)
 
 try:
     client.admin.command('ping')

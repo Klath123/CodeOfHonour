@@ -89,7 +89,7 @@ export default function WebSocketChatBox({ peer }) {
 
   const checkUserOnlineStatus = useCallback(async () => {
     try {
-      const res = await fetch(`http://localhost:8000/api/v1/user/status/${peerId}`, {
+      const res = await fetch(`https://localhost:8000/api/v1/user/status/${peerId}`, {
         credentials: "include",
       });
       if (res.ok) {
@@ -114,7 +114,7 @@ export default function WebSocketChatBox({ peer }) {
 
   const fetchPeerPublicKeys = useCallback(async (peerId) => {
     try {
-      const res = await fetch(`http://localhost:8000/api/v1/user/keys/${peerId}`, {
+      const res = await fetch(`https://localhost:8000/api/v1/user/keys/${peerId}`, {
         credentials: "include",
       });
       if (!res.ok) {
@@ -232,7 +232,7 @@ export default function WebSocketChatBox({ peer }) {
         console.log("📱 Processed local messages:", processedLocal.length);
 
         const res = await fetch(
-          `http://localhost:8000/api/v1/messages/${peerId}`,
+          `https://localhost:8000/api/v1/messages/${peerId}`,
           {
             credentials: "include",
           }
@@ -386,7 +386,7 @@ export default function WebSocketChatBox({ peer }) {
       }
 
       setIsConnecting(true);
-      const ws = new WebSocket("ws://localhost:8000/api/v1/ws/chat");
+      const ws = new WebSocket("wss://localhost:8000/api/v1/ws/chat");
       socket.current = ws;
 
       ws.onopen = () => {

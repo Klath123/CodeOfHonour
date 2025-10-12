@@ -641,12 +641,12 @@ export default function WebSocketChatBox({ peer }) {
                 {peer.username}
               </h2>
               <div className="flex items-center space-x-2">
-                <div className={`w-2 h-2 rounded-full ${
+                {/* <div className={`w-2 h-2 rounded-full ${
                   isUserOnline ? 'bg-[#00ff99] animate-pulse shadow-[0_0_5px_#00ff99]' : 'bg-[#ff4444]'
                 }`}></div>
                 <span className="text-[#00ff99]/80 text-xs font-mono">
                   {isUserOnline ? 'ACTIVE' : 'OFFLINE'}
-                </span>
+                </span> */}
               </div>
             </div>
           </div>

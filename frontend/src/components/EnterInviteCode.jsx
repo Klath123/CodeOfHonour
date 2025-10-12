@@ -38,7 +38,11 @@ export default function EnterInviteCode() {
 
       const connectedUser = res.data.connected_user;
       setPeer(connectedUser);
+<<<<<<< HEAD
       toast.success(`Connected securely to ${connectedUser.username}! ⚡`);
+=======
+      // toast.success(Connected securely to ${connectedUser.username}! ⚡);
+>>>>>>> e8bafef4e3874047c1c3571b9017529a9398d006
       navigate("/chat");
     } catch (err) {
       console.error(err);
@@ -161,6 +165,12 @@ export default function EnterInviteCode() {
           </button>
         </div>
       </div>
+<<<<<<< HEAD
     </div>
   );
 }
+=======
+    </div>
+  );
+}
+>>>>>>> e8bafef4e3874047c1c3571b9017529a9398d006

@@ -203,7 +203,8 @@ async function handleSignMessage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-black text-slate-100 p-8 flex flex-col gap-8">
+    // <div className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-black text-slate-100 p-8 flex flex-col gap-8">
+    <div className="min-h-screen bg-black text-slate-100 p-8 flex flex-col gap-8">
       <header className="max-w-5xl mx-auto text-center mb-14">
         <h1 className="text-3xl font-bold tracking-tight">Post-Quantum Chat — Visual Playground</h1>
       </header>
@@ -211,13 +212,13 @@ async function handleSignMessage() {
       <main className="flex flex-col items-center justify-center min-h-screen">
         {/* Step 1 & 2: Key Exchange */}
         <div className="w-full max-w-6xl relative mb-14">
-            {/* <div className="bg-slate-800/60 border border-slate-700 rounded-2xl p-8 shadow-2xl"> */}
+            {/* <div className="bg-slate-800/60 border border-[#00ff99] rounded-2xl p-8 shadow-2xl"> */}
           <div className="text-center mb-6">
               <h2 className="text-2xl font-bold text-slate-100">Step 1 & 2: Key Exchange</h2>
               <p className="text-slate-300 mt-2">Decaptulation of the public key to shared secreat and cipher text</p>
             </div>
           <div className="absolute left-0 top-1/2 -translate-y-1/2 w-72">
-            <div className="bg-slate-800/60 border border-slate-700 rounded-2xl p-6 shadow-2xl">
+            <div className="bg-slate-800/60 border border-[#00ff99] rounded-2xl p-6 shadow-2xl">
               <div className="flex items-center gap-3">
                 <div className="p-3 rounded-lg bg-slate-700/40">
                   <HiOutlineKey size={28} />
@@ -246,7 +247,7 @@ async function handleSignMessage() {
           </div>
 
           <div className="absolute right-0 top-1/2 -translate-y-1/2 w-72">
-            <div className="bg-slate-800/60 border border-slate-700 rounded-2xl p-6 shadow-2xl text-right">
+            <div className="bg-slate-800/60 border border-[#00ff99] rounded-2xl p-6 shadow-2xl text-right">
               <div className="flex items-center gap-3 justify-end">
                 <div>
                   <div className="text-lg font-semibold">{receiver.name}</div>
@@ -309,7 +310,7 @@ async function handleSignMessage() {
               </AnimatePresence>
 
               <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[60%]">
-                <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-4 flex gap-4 justify-center items-center">
+                <div className="bg-slate-800/50 border border-[#00ff99] rounded-xl p-4 flex gap-4 justify-center items-center">
                   <div className="w-1/3 text-center">
                     <div className="text-xs text-slate-400">Kyber Ciphertext</div>
                     <div className={`mt-2 font-mono text-sm p-2 rounded bg-slate-900/60 ${kyberCiphertext ? 'border border-amber-400/40' : 'opacity-40'}`}>
@@ -346,7 +347,7 @@ async function handleSignMessage() {
 
         {/* Step 3 & 4: Message Mixing & AES-GCM Encryption */}
         <div className="w-full max-w-4xl mt-16">
-          <div className="bg-slate-800/60 border border-slate-700 rounded-2xl p-6 shadow-2xl">
+          <div className="bg-slate-800/60 border border-[#00ff99] rounded-2xl p-6 shadow-2xl">
             <div className="text-center mb-6">
               <h2 className="text-2xl font-bold text-slate-100">Step 3 & 4: Message Encryption</h2>
               <p className="text-slate-300 mt-2">Mix message with shared secret and encrypt using AES-GCM</p>
@@ -359,7 +360,7 @@ async function handleSignMessage() {
                 <input
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
-                  className="w-full bg-slate-900/60 border border-slate-700 px-4 py-3 rounded-lg font-mono text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
+                  className="w-full bg-slate-900/60 border border-[#00ff99] px-4 py-3 rounded-lg font-mono text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
                   placeholder="Type your message here..."
                 />
               </div>
@@ -474,13 +475,13 @@ async function handleSignMessage() {
             <div className="mt-8 grid grid-cols-2 gap-6">
               <div>
                 <div className="text-sm text-slate-400 mb-2">Encrypted Message</div>
-                <div className={`font-mono text-sm p-3 rounded-lg bg-slate-900/60 border ${encryptedMessage ? 'border-emerald-500/40' : 'border-slate-700 opacity-40'}`}>
+                <div className={`font-mono text-sm p-3 rounded-lg bg-slate-900/60 border ${encryptedMessage ? 'border-emerald-500/40' : 'border-[#00ff99] opacity-40'}`}>
                   {encryptedMessage ?? "-- waiting for encryption --"}
                 </div>
               </div>
               <div>
                 <div className="text-sm text-slate-400 mb-2">Initialization Vector (IV)</div>
-                <div className={`font-mono text-sm p-3 rounded-lg bg-slate-900/60 border ${iv ? 'border-amber-500/40' : 'border-slate-700 opacity-40'}`}>
+                <div className={`font-mono text-sm p-3 rounded-lg bg-slate-900/60 border ${iv ? 'border-amber-500/40' : 'border-[#00ff99] opacity-40'}`}>
                   {iv ?? "-- waiting for encryption --"}
                 </div>
               </div>
@@ -498,7 +499,7 @@ async function handleSignMessage() {
 
         {/* Step 5: Dilithium Signing */}
         <div className="w-full max-w-4xl mt-16">
-          <div className="bg-slate-800/60 border border-slate-700 rounded-2xl p-6 shadow-2xl">
+          <div className="bg-slate-800/60 border border-[#00ff99] rounded-2xl p-6 shadow-2xl">
             <div className="text-center mb-6">
               <h2 className="text-2xl font-bold text-slate-100">Step 5: Digital Signature (Dilithium)</h2>
               <p className="text-slate-300 mt-2">Sign the message with Dilithium private key to create digital signature</p>
@@ -614,7 +615,7 @@ async function handleSignMessage() {
             {/* Output Display */}
             <div className="mt-8">
               <div className="text-sm text-slate-400 mb-2">Digital Signature</div>
-              <div className={`font-mono text-sm p-3 rounded-lg bg-slate-900/60 border ${signature ? 'border-purple-500/40' : 'border-slate-700 opacity-40'}`}>
+              <div className={`font-mono text-sm p-3 rounded-lg bg-slate-900/60 border ${signature ? 'border-purple-500/40' : 'border-[#00ff99] opacity-40'}`}>
                 {signature ?? "-- waiting for signing --"}
               </div>
             </div>
@@ -664,7 +665,7 @@ async function handleSignMessage() {
 
         {/* Step 6: Transmission to Receiver */}
         <div className="w-full max-w-4xl mt-16">
-          <div className="bg-slate-800/60 border border-slate-700 rounded-2xl p-6 shadow-2xl">
+          <div className="bg-slate-800/60 border border-[#00ff99] rounded-2xl p-6 shadow-2xl">
             <div className="text-center mb-6">
               <h2 className="text-2xl font-bold text-slate-100">Step 6: Secure Transmission</h2>
               <p className="text-slate-300 mt-2">Send encrypted package to receiver through secure channel</p>
@@ -946,7 +947,7 @@ async function handleSignMessage() {
 
         {/* Step 7 & 8: Decapsulation */}
         <div className="w-full max-w-4xl mt-16">
-        <div className="bg-slate-800/60 border border-slate-700 rounded-2xl p-6 shadow-2xl">
+        <div className="bg-slate-800/60 border border-[#00ff99] rounded-2xl p-6 shadow-2xl">
             <div className="text-center mb-6">
             <h2 className="text-2xl font-bold text-slate-100">Step 7 & 8: Key Decapsulation</h2>
             <p className="text-slate-300 mt-2">Recover shared secret using Kyber ciphertext and recipient's private key</p>
@@ -1040,7 +1041,7 @@ async function handleSignMessage() {
             {/* Output Display */}
             <div className="mt-8">
             <div className="text-sm text-slate-400 mb-2">Recovered Shared Secret</div>
-            <div className={`font-mono text-sm p-3 rounded-lg bg-slate-900/60 border ${sharedSecret ? 'border-emerald-500/40' : 'border-slate-700 opacity-40'}`}>
+            <div className={`font-mono text-sm p-3 rounded-lg bg-slate-900/60 border ${sharedSecret ? 'border-emerald-500/40' : 'border-[#00ff99] opacity-40'}`}>
                 {sharedSecret ?? "-- waiting for decapsulation --"}
             </div>
             </div>
@@ -1057,7 +1058,7 @@ async function handleSignMessage() {
 
         {/* Step 9: AES-GCM Decryption */}
         <div className="w-full max-w-4xl mt-16">
-        <div className="bg-slate-800/60 border border-slate-700 rounded-2xl p-6 shadow-2xl">
+        <div className="bg-slate-800/60 border border-[#00ff99] rounded-2xl p-6 shadow-2xl">
             <div className="text-center mb-6">
             <h2 className="text-2xl font-bold text-slate-100">Step 9: Message Decryption</h2>
             <p className="text-slate-300 mt-2">Decrypt the message using shared secret, encrypted message, and IV</p>
@@ -1182,7 +1183,7 @@ async function handleSignMessage() {
             {/* Output Display */}
             <div className="mt-8">
             <div className="text-sm text-slate-400 mb-2">Decrypted Message</div>
-            <div className={`font-mono text-lg p-4 rounded-lg bg-slate-900/60 border text-center ${decryptedMessage ? 'border-emerald-500/40 text-emerald-300' : 'border-slate-700 opacity-40'}`}>
+            <div className={`font-mono text-lg p-4 rounded-lg bg-slate-900/60 border text-center ${decryptedMessage ? 'border-emerald-500/40 text-emerald-300' : 'border-[#00ff99] opacity-40'}`}>
                 {decryptedMessage ? `"${decryptedMessage}"` : "-- waiting for decryption --"}
             </div>
             </div>
@@ -1199,7 +1200,7 @@ async function handleSignMessage() {
 
         {/* Step 10: Signature Verification */}
         <div className="w-full max-w-4xl mt-16">
-        <div className="bg-slate-800/60 border border-slate-700 rounded-2xl p-6 shadow-2xl">
+        <div className="bg-slate-800/60 border border-[#00ff99] rounded-2xl p-6 shadow-2xl">
             <div className="text-center mb-6">
             <h2 className="text-2xl font-bold text-slate-100">Step 10: Signature Verification</h2>
             <p className="text-slate-300 mt-2">Verify the digital signature using message, signature, and sender's public key</p>
@@ -1307,7 +1308,7 @@ async function handleSignMessage() {
             <div className="text-sm text-slate-400 mb-2">Verification Result</div>
             <div className={`font-mono text-lg p-4 rounded-lg text-center border ${
                 verificationResult === null 
-                ? 'border-slate-700 opacity-40' 
+                ? 'border-[#00ff99] opacity-40' 
                 : verificationResult 
                     ? 'border-emerald-500/40 bg-emerald-900/20 text-emerald-300' 
                     : 'border-red-500/40 bg-red-900/20 text-red-300'

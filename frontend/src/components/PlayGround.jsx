@@ -295,13 +295,13 @@ async function handleSignMessage() {
                   <motion.div
                     className="absolute right-[14.5%] top-1/2 -translate-y-1/2"
                     initial={{ x: 0, opacity: 0 }}
-                    animate={{ x: "-344%", opacity: 1 }}
+                    animate={{ x: "-300%", opacity: 1 }}
                     exit={{ opacity: 0 }}
                     transition={{ duration: 1.0, delay: 0.35, ease: "easeInOut" }}
                   >
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 bg-slate-700 backdrop-blur-md p-2 rounded-lg border border-slate-600 shadow-lg">
                       <div className="text-xs font-mono text-sky-200">kyber-public</div>
-                      <div className="p-2 rounded-full bg-sky-400/10 border border-sky-300/20">
+                      <div className="p-2 rounded-full bg-sky-900 border border-sky-300">
                         <HiOutlineKey size={18} className="text-sky-300" />
                       </div>
                     </div>

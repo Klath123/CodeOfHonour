@@ -1,4 +1,8 @@
-# Shunya: A Post-Quantum Secure Chat Application
+# Vajra: A Post-Quantum Secure Chat Application
+
+▶️ [Watch the demo on YouTube](https://youtu.be/3Gy8Ksx9pXc?si=c-tX38NdLCcr03Mg)
+
+
 
 
 This is a real-time, end-to-end encrypted chat application built to be secure not just today, but in the post-quantum future. It addresses the threat of quantum computers breaking current encryption standards by implementing NIST-standardized quantum-resistant cryptographic algorithms.
